@@ -1,8 +1,14 @@
 {
-    "name": "jenssegers/blade",
-    "description": "The standalone version of Laravel's Blade templating engine for use outside of Laravel.",
-    "keywords": ["laravel", "blade", "template", "view", "render"],
-    "license" : "MIT",
+    "name": "rcalicdan/blade",
+    "description": "A standalone fork of jenssegers/blade, Laravel's Blade templating engine for use outside of Laravel. This maintained version includes fixes for modern PHP environments.",
+    "keywords": [
+        "laravel",
+        "blade",
+        "template",
+        "view",
+        "render"
+    ],
+    "license": "MIT",
     "authors": [
         {
             "name": "Jens Segers",
@@ -20,7 +26,7 @@
     },
     "autoload": {
         "psr-4": {
-            "Jenssegers\\Blade\\": "src/"
+            "Rcalicdan\\BladeL\\": "src/"
         }
     },
     "minimum-stability": "dev",

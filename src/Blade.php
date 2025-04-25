@@ -1,6 +1,6 @@
 <?php
 
-namespace Jenssegers\Blade;
+namespace Rcalicdan\Blade;
 
 use Illuminate\Config\Repository;
 use Illuminate\Container\Container;
@@ -14,7 +14,7 @@ use Illuminate\Support\Facades\Facade;
 use Illuminate\View\Compilers\BladeCompiler;
 use Illuminate\View\Factory;
 use Illuminate\View\ViewServiceProvider;
-use Jenssegers\Blade\Container as BladeContainer;
+use Rcalicdan\Blade\Container as BladeContainer;
 
 class Blade implements FactoryContract
 {

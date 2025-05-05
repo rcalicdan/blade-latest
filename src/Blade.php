@@ -15,6 +15,7 @@ use Illuminate\View\Compilers\BladeCompiler;
 use Illuminate\View\Factory;
 use Illuminate\View\ViewServiceProvider;
 use Rcalicdan\Blade\Container as BladeContainer;
+use Illuminate\View\ComponentAttributeBag;
 
 class Blade implements FactoryContract
 {
@@ -42,6 +43,9 @@ class Blade implements FactoryContract
 
         $this->factory = $this->container->get('view');
         $this->compiler = $this->container->get('blade.compiler');
+
+        // Register basic component directives
+        $this->registerComponentDirectives();
     }
 
     public function render(string $view, array $data = [], array $mergeData = []): string
@@ -108,6 +112,48 @@ class Blade implements FactoryContract
         return $this;
     }
 
+    /**
+     * Register a class-based component.
+     *
+     * @param  string  $class
+     * @param  string|null  $alias
+     * @param  string  $prefix
+     * @return $this
+     */
+    public function component($class, $alias = null, $prefix = '')
+    {
+        $this->compiler->component($class, $alias, $prefix);
+
+        return $this;
+    }
+
+    /**
+     * Register an anonymous component path.
+     *
+     * @param  string  $path
+     * @param  string|null  $prefix
+     * @return $this
+     */
+    public function anonymousComponentPath($path, $prefix = null)
+    {
+        $this->compiler->anonymousComponentPath($path, $prefix);
+
+        return $this;
+    }
+
+    /**
+     * Set the component path for component resolution.
+     *
+     * @param  string  $path
+     * @return $this
+     */
+    public function withComponentPath(string $path)
+    {
+        $this->container->instance('view.component_path', $path);
+
+        return $this;
+    }
+
     public function __call(string $method, array $params)
     {
         return call_user_func_array([$this->factory, $method], $params);
@@ -115,18 +161,62 @@ class Blade implements FactoryContract
 
     protected function setupContainer(array $viewPaths, string $cachePath)
     {
-        $this->container->bindIf('files', fn () => new Filesystem);
-        $this->container->bindIf('events', fn () => new Dispatcher);
-        $this->container->bindIf('config', fn () => new Repository([
+        $this->container->bindIf('files', fn() => new Filesystem);
+        $this->container->bindIf('events', fn() => new Dispatcher);
+        $this->container->bindIf('config', fn() => new Repository([
             'view.paths' => $viewPaths,
             'view.compiled' => $cachePath,
+            'view.component_path' => null,
         ]));
+
+        // Register ComponentAttributeBag for component attributes
+        $this->container->bind(ComponentAttributeBag::class, function () {
+            return new ComponentAttributeBag;
+        });
+
         $this->container->bindIf('blade.compiler', function ($app) use ($cachePath) {
             return new BladeCompiler($app['files'], $cachePath);
         });
 
         Container::setInstance($this->container);
-
         Facade::setFacadeApplication($this->container);
+    }
+
+    /**
+     * Register basic component-related directives.
+     *
+     * @return void
+     */
+    protected function registerComponentDirectives()
+    {
+        // @props directive
+        $this->directive('props', function ($expression) {
+            return "<?php \$attributes = \$attributes->merge($expression); ?>";
+        });
+
+        // @aware directive
+        $this->directive('aware', function ($expression) {
+            return "<?php foreach({$expression} as \$__key => \$__value) { \$__aware[\$__key] = \$__value; } ?>";
+        });
+
+        // @slot directive
+        $this->directive('slot', function ($expression) {
+            return "<?php \$__env->slot{$expression}; ?>";
+        });
+
+        // @endslot directive
+        $this->directive('endslot', function () {
+            return '<?php $__env->endSlot(); ?>';
+        });
+
+        // @component directive
+        $this->directive('component', function ($expression) {
+            return "<?php \$__env->startComponent{$expression}; ?>";
+        });
+
+        // @endcomponent directive
+        $this->directive('endcomponent', function () {
+            return '<?php echo $__env->renderComponent(); ?>';
+        });
     }
 }
